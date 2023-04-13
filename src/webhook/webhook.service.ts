@@ -1,26 +1,39 @@
-import { Injectable } from '@nestjs/common';
-import { CreateWebhookDto } from './dto/create-webhook.dto';
-import { UpdateWebhookDto } from './dto/update-webhook.dto';
-
+import { Injectable } from '@nestjs/common'
+import { LoggerService } from '../libs/log.service'
+import { IFormatData } from './interface/format-data.interface'
+import { ChannelType } from './constants/index.constants'
+import { ProducerService } from 'src/kafka/producer.service'
 @Injectable()
 export class WebhookService {
-  create(createWebhookDto: CreateWebhookDto) {
-    return 'This action adds a new webhook';
+  private readonly _logger
+  constructor(
+    loggerService: LoggerService,
+    private readonly producerService: ProducerService
+  ) {
+    this._logger = loggerService.getLogger(WebhookService)
   }
 
-  findAll() {
-    return `This action returns all webhook`;
+  async listenEventFromZalo(body: any) {
+    this._logger.info(`Data receive from Zalo is: ${JSON.stringify(body)}`)
+    const dataConvert = this.convertDataZalo(body)
+    this._logger.info(`Data after convert and send to kafka is: ${JSON.stringify(dataConvert)}`)
+    //send data to kafka
+    await this.producerService.produce('ACD.Message.Received', { value: JSON.stringify(dataConvert) })
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} webhook`;
-  }
-
-  update(id: number, updateWebhookDto: UpdateWebhookDto) {
-    return `This action updates a #${id} webhook`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} webhook`;
+  private convertDataZalo(data) {
+    const { event_name, app_id, sender, message, timestamp } = data
+    const newData: IFormatData = {
+      messageId: message.msg_id ?? 'not found',
+      text: message.text,
+      timestamp: timestamp,
+      senderId: sender.id,
+      applicationId: app_id,
+      channel: ChannelType.ZALO,
+      event: event_name,
+      media: message.attachments
+    }
+    return newData
   }
 }
+

@@ -1,27 +1,25 @@
 import { NestFactory } from '@nestjs/core'
 import { AppModule } from './app.module'
-import * as fs from 'fs'
-import { ExpressAdapter } from '@nestjs/platform-express'
-import * as http from 'http'
-import * as https from 'https'
-import * as express from 'express'
-import { join } from 'path'
+import { LoggerService } from './libs/log.service'
+import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger'
 
 async function bootstrap() {
-  const privateKey = fs.readFileSync(join(process.cwd(), './src/cert/privateKeyFBAuthenticate.key'), 'utf8')
-  const certificate = fs.readFileSync(join(process.cwd(), './src/cert/certificateFBAuthenticate.crt'), 'utf8')
-  const httpsOptions = { key: privateKey, cert: certificate }
+  const app = await NestFactory.create(AppModule)
 
-  const server = express()
-  const app = await NestFactory.create(
-    AppModule,
-    new ExpressAdapter(server),
-  )
-  await app.init()
+  const logger = app.get<LoggerService>(LoggerService)
 
-  http.createServer(server).listen(6969)
-  //https.createServer(httpsOptions, server).listen(6969)
+  const config = new DocumentBuilder()
+    .setTitle('Zalo Connector')
+    .setDescription('Zalo Messenging Connector')
+    .setVersion('1.0')
+    .addBearerAuth()
+    .build()
+
+  const document = SwaggerModule.createDocument(app, config)
+  SwaggerModule.setup('api', app, document)
+
+  await app.listen(6969)
+
+  logger.getLogger(AppModule).info(`Application running on http://0.0.0.0:6969`)
 }
-
-bootstrap();
-
+bootstrap()
