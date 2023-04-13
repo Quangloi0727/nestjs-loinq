@@ -3,6 +3,7 @@ import { LoggerService } from '../libs/log.service'
 import { IFormatData } from './interface/format-data.interface'
 import { ChannelType } from './constants/index.constants'
 import { ProducerService } from 'src/kafka/producer.service'
+import { TOPIC } from './constants/topic.constants'
 @Injectable()
 export class WebhookService {
   private readonly _logger
@@ -18,7 +19,7 @@ export class WebhookService {
     const dataConvert = this.convertDataZalo(body)
     this._logger.info(`Data after convert and send to kafka is: ${JSON.stringify(dataConvert)}`)
     //send data to kafka
-    await this.producerService.produce('ACD.Message.Received', { value: JSON.stringify(dataConvert) })
+    await this.producerService.produce(TOPIC.ACD_MESSAGE_RECEIVED, { value: JSON.stringify(dataConvert) })
   }
 
   private convertDataZalo(data) {
