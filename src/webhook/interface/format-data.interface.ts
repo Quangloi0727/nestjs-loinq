@@ -8,5 +8,5 @@ export interface IFormatData {
     applicationId: string,
     channel: ChannelType,
     event: string,
-    media: []
+    media: any
 }
