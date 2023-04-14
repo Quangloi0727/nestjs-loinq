@@ -28,7 +28,7 @@ export class WebhookService {
     const newData: IFormatData = {
       messageId: message?.msg_id ?? 'not found',
       text: message?.text,
-      timestamp: timestamp,
+      timestamp: Number(timestamp),
       senderId: sender?.id,
       applicationId: app_id,
       channel: ChannelType.ZALO,
@@ -43,14 +43,6 @@ export class WebhookService {
     const newAttachments = attachments.map((el) => {
       const { type } = el
       switch (type) {
-        case TYPE.IMAGE:
-          return {
-            media: el.payload?.url ?? '',
-            fileName: "",
-            size: "",
-            fileType: "",
-            mediaType: el.type
-          }
         case TYPE.FILE:
           return {
             media: el.payload?.url ?? '',
@@ -59,14 +51,8 @@ export class WebhookService {
             fileType: el.payload?.type ?? '',
             mediaType: el.type
           }
+        case TYPE.IMAGE:
         case TYPE.STICKER:
-          return {
-            media: el.payload?.url ?? '',
-            fileName: '',
-            size: '',
-            fileType: '',
-            mediaType: el.type
-          }
         case TYPE.GIF:
           return {
             media: el.payload?.url ?? '',
