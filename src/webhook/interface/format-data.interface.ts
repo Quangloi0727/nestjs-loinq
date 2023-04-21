@@ -5,6 +5,7 @@ export interface IFormatData {
     text: string,
     timestamp: number,
     senderId: string,
+    senderName: string,
     applicationId: string,
     channel: ChannelType,
     event: string,

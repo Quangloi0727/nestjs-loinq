@@ -10,3 +10,17 @@ export const TYPE = {
     GIF: 'gif',
     LINK: 'link',
 }
+
+export const DEFAULT_SENDER_NAME = {
+    NOT_FOLLOW: 'Liên hệ chưa follow OA',
+    NOT_TOKEN: 'Not find token'
+}
+
+export const EVENT_ZALO = {
+    FOLLOW: 'follow',
+    UN_FOLLOW: 'unfollow'
+}
+
+export const ERROR_CODE_ZALO = {
+    NOT_FOLLOW: '-213'
+}
