@@ -36,4 +36,5 @@ export class TenantService {
     if (!findToken) return ''
     return findToken.configs[applicationId]['pageAccessToken']
   }
+
 }

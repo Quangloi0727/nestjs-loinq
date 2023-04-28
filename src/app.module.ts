@@ -7,6 +7,8 @@ import { WebhookModule } from './webhook/webhook.module';
 import { KafkaModule } from './kafka/kafka.module';
 import { MongooseModule } from '@nestjs/mongoose'
 import { TenantModule } from './tenant/tenant.module';
+import { MessageModule } from './message/message.module';
+import { ConversationModule } from './conversation/conversation.module';
 
 @Module({
   imports: [
@@ -21,7 +23,9 @@ import { TenantModule } from './tenant/tenant.module';
     WebhookModule,
     LoggerModule,
     KafkaModule,
-    TenantModule
+    TenantModule,
+    MessageModule,
+    ConversationModule
   ],
   controllers: [AppController],
   providers: [AppService],

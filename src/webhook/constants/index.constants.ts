@@ -24,3 +24,9 @@ export const EVENT_ZALO = {
 export const ERROR_CODE_ZALO = {
     NOT_FOLLOW: '-213'
 }
+
+export enum MessageType {
+    TEXT = "TEXT",
+    IMAGE = "IMAGE",
+    FILE = "FILE"
+}

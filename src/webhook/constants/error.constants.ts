@@ -1,0 +1,1 @@
+export const UPLOAD_FAIL = 'Upload to Zalo fail !'
