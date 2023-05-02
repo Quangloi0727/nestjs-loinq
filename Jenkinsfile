@@ -3,9 +3,9 @@ pipeline {
     environment {
         //docker config
         REGISTRY_URL = "192.168.15.112:5000/${env.GIT_BRANCH}"
-        IMAGE_NAME = 'acd_zalo_connector'
+        IMAGE_NAME = 'acd-zalo-connector'
         BUILD_VERSION = GIT_COMMIT.take(8)
-      	APP_NAME = 'acd_zalo_connector'
+      	APP_NAME = 'acd-zalo-connector'
 
         //notify config
         SKYPE_ACCOUNT = credentials('skype_account')
