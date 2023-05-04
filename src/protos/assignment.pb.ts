@@ -12,7 +12,7 @@ export interface AssignAgentToConversationRequest {
 export interface AssignAgentToConversationResponse {
   tenantId: number;
   conversationId: string;
-  agentId: number;
+  agentId: string;
 }
 
 export const COM_METECH_ACD_PACKAGE_NAME = "com.metech.acd";

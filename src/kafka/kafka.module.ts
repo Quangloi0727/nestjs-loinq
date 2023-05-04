@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common'
 import { ConfigModule } from '@nestjs/config'
-import { LoggerModule } from 'src/libs/log.module'
+import { LoggerModule } from '../libs/log.module'
 import { ProducerService } from './producer.service'
 
 @Module({

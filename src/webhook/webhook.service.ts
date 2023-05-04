@@ -2,12 +2,12 @@ import { HttpStatus, Injectable } from '@nestjs/common'
 import { LoggerService } from '../libs/log.service'
 import { IFormatData } from './interface/format-data.interface'
 import { ChannelType, TYPE, DEFAULT_SENDER_NAME, EVENT_ZALO, ERROR_CODE_ZALO, MessageType } from './constants/index.constants'
-import { ProducerService } from 'src/kafka/producer.service'
+import { ProducerService } from '../kafka/producer.service'
 import { TOPIC } from './constants/topic.constants'
-import { TenantService } from 'src/tenant/tenant.service'
+import { TenantService } from '../tenant/tenant.service'
 import axios from 'axios'
-import { SendMessageToZaloRequest, SendMessageToZaloResponse } from 'src/protos/zalo-connector.pb'
-import { ConversationService } from 'src/conversation/conversation.service'
+import { SendMessageToZaloRequest, SendMessageToZaloResponse } from '../protos/zalo-connector.pb'
+import { ConversationService } from '../conversation/conversation.service'
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs'
 import * as crypto from 'crypto'
 const FormData = require('form-data')
@@ -57,7 +57,7 @@ export class WebhookService {
           break
         case MessageType.FILE:
           const fileUpload = this.saveFile(request.attachments)
-          this._logger.info(`fileUpload is: ${fileUpload}`)
+          this._logger.info(`FileUpload is: ${fileUpload}`)
           fileName = `/public/${fileUpload}`
           const readFile = readFileSync(`./public/${fileUpload}`)
           const responseUploadFile = await this.requestToZaloUploadFile(tokenOfApp, readFile, fileUpload)
