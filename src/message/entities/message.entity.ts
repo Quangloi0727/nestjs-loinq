@@ -5,9 +5,6 @@ export type MessageDocument = Message & Document
 @Schema({ collection: 'message' })
 export class Message {
     @Prop()
-    _id: string
-
-    @Prop()
     conversationId:string
 
     @Prop()

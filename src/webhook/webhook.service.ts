@@ -1,4 +1,4 @@
-import { HttpStatus, Injectable } from '@nestjs/common'
+import { BadRequestException, HttpStatus, Injectable } from '@nestjs/common'
 import { LoggerService } from '../libs/log.service'
 import { IFormatData } from './interface/format-data.interface'
 import { ChannelType, TYPE, DEFAULT_SENDER_NAME, EVENT_ZALO, ERROR_CODE_ZALO, MessageType } from './constants/index.constants'
@@ -40,7 +40,7 @@ export class WebhookService {
 
   async sendMessageToZalo(request: SendMessageToZaloRequest): Promise<SendMessageToZaloResponse> {
     try {
-      this._logger.info(`Data send to Zalo reply customer message: ${JSON.stringify(request.message, null, '\t')}`)
+      this._logger.debug(`Data send to Zalo reply customer message: ${JSON.stringify(request.message, null, '\t')}`)
       const { conversationId, messageType, text, cloudAgentId, cloudTenantId } = request.message
       const infoApp = await this.conversationService.findInfoAppToReply(conversationId)
       const tokenOfApp = await this.tenantService.findTokenByAppId(infoApp.applicationId)
@@ -152,7 +152,9 @@ export class WebhookService {
         break
     }
 
-    return axios.post(`https://openapi.zalo.me/v2.0/oa/message`, data, { headers: headersSend })
+    const resp = await axios.post(`https://openapi.zalo.me/v2.0/oa/message`, data, { headers: headersSend })
+    if (resp.data.error == 0) return resp
+    throw new BadRequestException(resp.data.message)
   }
 
   private saveFile(file) {

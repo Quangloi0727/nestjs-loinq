@@ -31,6 +31,6 @@ export class ConversationService {
   }
 
   findInfoAppToReply(conversationId) {
-    return this.conversationModel.findById(conversationId).lean()
+    return this.conversationModel.findOne({ _id: conversationId }).lean()
   }
 }
