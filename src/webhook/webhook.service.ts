@@ -1,4 +1,4 @@
-import { BadRequestException, HttpStatus, Injectable } from '@nestjs/common'
+import { BadRequestException, HttpStatus, Inject, Injectable } from '@nestjs/common'
 import { LoggerService } from '../libs/log.service'
 import { IFormatData } from './interface/format-data.interface'
 import { ChannelType, TYPE, DEFAULT_SENDER_NAME, EVENT_ZALO, ERROR_CODE_ZALO, MessageType } from './constants/index.constants'
@@ -14,6 +14,9 @@ const FormData = require('form-data')
 import { UPLOAD_FAIL } from './constants/error.constants'
 import { RpcException } from '@nestjs/microservices'
 import { IDataResponse } from './interface/data-response.interface'
+import { redisClient } from 'src/redis/redis.module'
+import { RedisClientType } from '@redis/client'
+import { REDIS_CACHE_TOKEN } from 'src/conversation/constants/index.constants'
 @Injectable()
 export class WebhookService {
   private readonly _logger
@@ -21,7 +24,9 @@ export class WebhookService {
     loggerService: LoggerService,
     private readonly producerService: ProducerService,
     private readonly tenantService: TenantService,
-    private readonly conversationService: ConversationService
+    private readonly conversationService: ConversationService,
+    @Inject(redisClient)
+    private readonly clientRedis: RedisClientType
   ) {
     this._logger = loggerService.getLogger(WebhookService)
   }
@@ -43,7 +48,9 @@ export class WebhookService {
       this._logger.debug(`Data send to Zalo reply customer message: ${JSON.stringify(request.message, null, '\t')}`)
       const { conversationId, messageType, text, cloudAgentId, cloudTenantId } = request.message
       const infoApp = await this.conversationService.findInfoAppToReply(conversationId)
-      const tokenOfApp = await this.tenantService.findTokenByAppId(infoApp.applicationId)
+      //const tokenOfApp = await this.tenantService.findTokenByAppId(infoApp.applicationId)
+      const listApp = JSON.parse(await this.clientRedis.get(REDIS_CACHE_TOKEN))
+      const { accessToken } = listApp.find(el => el.applicationId === infoApp.applicationId)
       let fileName: string = ''
       switch (messageType) {
         case MessageType.IMAGE:
@@ -51,22 +58,22 @@ export class WebhookService {
           this._logger.info(`ImageUpload is: ${ImageUpload}`)
           fileName = `/public/${ImageUpload}`
           const readImage = readFileSync(`./public/${ImageUpload}`)
-          const responseUploadImage = await this.requestToZaloUploadImage(tokenOfApp, readImage, ImageUpload)
+          const responseUploadImage = await this.requestToZaloUploadImage(accessToken, readImage, ImageUpload)
           if (responseUploadImage.data.message != "Success") throw new RpcException(UPLOAD_FAIL + responseUploadImage.data.message)
-          await this.requestToZaloSendMessage(tokenOfApp, infoApp, messageType, text, responseUploadImage?.data?.data?.attachment_id)
+          await this.requestToZaloSendMessage(accessToken, infoApp, messageType, text, responseUploadImage?.data?.data?.attachment_id)
           break
         case MessageType.FILE:
           const fileUpload = this.saveFile(request.attachments)
           this._logger.info(`FileUpload is: ${fileUpload}`)
           fileName = `/public/${fileUpload}`
           const readFile = readFileSync(`./public/${fileUpload}`)
-          const responseUploadFile = await this.requestToZaloUploadFile(tokenOfApp, readFile, fileUpload)
+          const responseUploadFile = await this.requestToZaloUploadFile(accessToken, readFile, fileUpload)
           if (responseUploadFile.data.message != "Success") throw new RpcException(UPLOAD_FAIL + responseUploadFile.data.message)
-          await this.requestToZaloSendMessage(tokenOfApp, infoApp, messageType, text, undefined, responseUploadFile?.data?.data?.token)
+          await this.requestToZaloSendMessage(accessToken, infoApp, messageType, text, undefined, responseUploadFile?.data?.data?.token)
           break
 
         case MessageType.TEXT:
-          await this.requestToZaloSendMessage(tokenOfApp, infoApp, messageType, text)
+          await this.requestToZaloSendMessage(accessToken, infoApp, messageType, text)
           break
 
         default:
