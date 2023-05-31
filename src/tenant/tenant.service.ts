@@ -23,26 +23,4 @@ export class TenantService {
     return cacheToken
   }
 
-  findAll() {
-    return `This action returns all tenant`
-  }
-
-  findOne(id: number) {
-    return `This action returns a #${id} tenant`
-  }
-
-  update(id: number, updateTenantDto: UpdateTenantDto) {
-    return `This action updates a #${id} tenant`
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} tenant`
-  }
-
-  async findTokenByAppId(applicationId) {
-    const findToken = await this.tenantModel.findOne({ applicationIds: applicationId })
-    if (!findToken) return ''
-    return findToken.configs[applicationId]['pageAccessToken']
-  }
-
 }
