@@ -5,9 +5,6 @@ export type ConversationDocument = Conversation & Document
 @Schema({ collection: 'conversation' })
 export class Conversation {
     @Prop()
-    _id: string
-
-    @Prop()
     senderId: string
 
     @Prop()

@@ -1,19 +1,23 @@
-import { HttpStatus, Injectable } from '@nestjs/common'
+import { BadRequestException, HttpStatus, Inject, Injectable } from '@nestjs/common'
 import { LoggerService } from '../libs/log.service'
 import { IFormatData } from './interface/format-data.interface'
 import { ChannelType, TYPE, DEFAULT_SENDER_NAME, EVENT_ZALO, ERROR_CODE_ZALO, MessageType } from './constants/index.constants'
-import { ProducerService } from 'src/kafka/producer.service'
+import { ProducerService } from '../kafka/producer.service'
 import { TOPIC } from './constants/topic.constants'
-import { TenantService } from 'src/tenant/tenant.service'
+import { TenantService } from '../tenant/tenant.service'
 import axios from 'axios'
-import { SendMessageToZaloRequest, SendMessageToZaloResponse } from 'src/protos/zalo-connector.pb'
-import { ConversationService } from 'src/conversation/conversation.service'
+import { SendMessageToZaloRequest, SendMessageToZaloResponse } from '../protos/zalo-connector.pb'
+import { ConversationService } from '../conversation/conversation.service'
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs'
 import * as crypto from 'crypto'
 const FormData = require('form-data')
 import { UPLOAD_FAIL } from './constants/error.constants'
 import { RpcException } from '@nestjs/microservices'
 import { IDataResponse } from './interface/data-response.interface'
+import { redisClient } from 'src/redis/redis.module'
+import { RedisClientType } from '@redis/client'
+import { REDIS_CACHE_TOKEN } from 'src/conversation/constants/index.constants'
+import * as moment from 'moment'
 @Injectable()
 export class WebhookService {
   private readonly _logger
@@ -21,7 +25,9 @@ export class WebhookService {
     loggerService: LoggerService,
     private readonly producerService: ProducerService,
     private readonly tenantService: TenantService,
-    private readonly conversationService: ConversationService
+    private readonly conversationService: ConversationService,
+    @Inject(redisClient)
+    private readonly clientRedis: RedisClientType
   ) {
     this._logger = loggerService.getLogger(WebhookService)
   }
@@ -40,33 +46,35 @@ export class WebhookService {
 
   async sendMessageToZalo(request: SendMessageToZaloRequest): Promise<SendMessageToZaloResponse> {
     try {
-      this._logger.info(`Data send to Zalo reply customer message: ${JSON.stringify(request.message, null, '\t')}`)
+      this._logger.debug(`Data send to Zalo reply customer message: ${JSON.stringify(request.message, null, '\t')}`)
       const { conversationId, messageType, text, cloudAgentId, cloudTenantId } = request.message
       const infoApp = await this.conversationService.findInfoAppToReply(conversationId)
-      const tokenOfApp = await this.tenantService.findTokenByAppId(infoApp.applicationId)
+      //const tokenOfApp = await this.tenantService.findTokenByAppId(infoApp.applicationId)
+      const listApp = JSON.parse(await this.clientRedis.get(REDIS_CACHE_TOKEN))
+      const { accessToken } = listApp.find(el => el.applicationId === infoApp.applicationId)
       let fileName: string = ''
       switch (messageType) {
         case MessageType.IMAGE:
           const ImageUpload = this.saveFile(request.attachments)
           this._logger.info(`ImageUpload is: ${ImageUpload}`)
-          fileName = `/public/${ImageUpload}`
-          const readImage = readFileSync(`./public/${ImageUpload}`)
-          const responseUploadImage = await this.requestToZaloUploadImage(tokenOfApp, readImage, ImageUpload)
+          fileName = ImageUpload
+          const readImage = readFileSync(`./public/socials/${ImageUpload}`)
+          const responseUploadImage = await this.requestToZaloUploadImage(accessToken, readImage, ImageUpload)
           if (responseUploadImage.data.message != "Success") throw new RpcException(UPLOAD_FAIL + responseUploadImage.data.message)
-          await this.requestToZaloSendMessage(tokenOfApp, infoApp, messageType, text, responseUploadImage?.data?.data?.attachment_id)
+          await this.requestToZaloSendMessage(accessToken, infoApp, messageType, text, responseUploadImage?.data?.data?.attachment_id)
           break
         case MessageType.FILE:
           const fileUpload = this.saveFile(request.attachments)
-          this._logger.info(`fileUpload is: ${fileUpload}`)
-          fileName = `/public/${fileUpload}`
-          const readFile = readFileSync(`./public/${fileUpload}`)
-          const responseUploadFile = await this.requestToZaloUploadFile(tokenOfApp, readFile, fileUpload)
+          this._logger.info(`FileUpload is: ${fileUpload}`)
+          fileName = fileUpload
+          const readFile = readFileSync(`./public/socials/${fileUpload}`)
+          const responseUploadFile = await this.requestToZaloUploadFile(accessToken, readFile, fileUpload)
           if (responseUploadFile.data.message != "Success") throw new RpcException(UPLOAD_FAIL + responseUploadFile.data.message)
-          await this.requestToZaloSendMessage(tokenOfApp, infoApp, messageType, text, undefined, responseUploadFile?.data?.data?.token)
+          await this.requestToZaloSendMessage(accessToken, infoApp, messageType, text, undefined, responseUploadFile?.data?.data?.token)
           break
 
         case MessageType.TEXT:
-          await this.requestToZaloSendMessage(tokenOfApp, infoApp, messageType, text)
+          await this.requestToZaloSendMessage(accessToken, infoApp, messageType, text)
           break
 
         default:
@@ -152,11 +160,14 @@ export class WebhookService {
         break
     }
 
-    return axios.post(`https://openapi.zalo.me/v2.0/oa/message`, data, { headers: headersSend })
+    const resp = await axios.post(`https://openapi.zalo.me/v3.0/oa/message/cs`, data, { headers: headersSend })
+    if (resp.data.error == 0) return resp
+    throw new BadRequestException(resp.data.message)
   }
 
   private saveFile(file) {
-    const dir = './public'
+    const formatFileName = `/${moment(new Date()).format("YYYY")}/${moment(new Date()).format("MM")}/${moment(new Date()).format("DD")}`
+    const dir = `./public/socials/${formatFileName}`
     if (!existsSync(dir)) mkdirSync(dir, { recursive: true })
     if (!file) return undefined
 
@@ -166,16 +177,19 @@ export class WebhookService {
     const fileName = `${originalname}${Date.now()}`
     const fileNameEncode = crypto.createHash('md5').update(fileName).digest("hex")
     writeFileSync(`${dir}/${fileNameEncode}.${type}`, file.buffer)
-    return `${fileNameEncode}.${type}`
+    return `${formatFileName}/${fileNameEncode}.${type}`
   }
 
   async getSenderName(body) {
     const { app_id, sender } = body
-    const tokenOfApp = await this.tenantService.findTokenByAppId(app_id)
-    if (!tokenOfApp) return DEFAULT_SENDER_NAME.NOT_TOKEN
+    const listApp = JSON.parse(await this.clientRedis.get(REDIS_CACHE_TOKEN))
+    const { accessToken } = listApp.find(el => el.applicationId === app_id)
+
+
+    if (!accessToken) return DEFAULT_SENDER_NAME.NOT_TOKEN
 
     const headersSend = {
-      access_token: tokenOfApp
+      access_token: accessToken
     }
     const response = await axios.get(`https://openapi.zalo.me/v2.0/oa/getprofile?data={"user_id":"${sender.id}"}`, { headers: headersSend })
 

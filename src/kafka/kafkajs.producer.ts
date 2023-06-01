@@ -1,6 +1,6 @@
 import { Logger } from '@nestjs/common'
 import { Kafka, Message, Producer } from 'kafkajs'
-import { sleep } from 'src/libs/sleep'
+import { sleep } from '../libs/sleep'
 import { IProducer } from './producer.interface'
 import { logLevel } from 'kafkajs'
 
