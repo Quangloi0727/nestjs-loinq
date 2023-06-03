@@ -2,7 +2,7 @@ import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose"
 
 export type ConversationDocument = Conversation & Document
 
-@Schema({ collection: 'conversation_test' })
+@Schema({ collection: 'conversation' })
 export class Conversation {
     @Prop()
     senderId: string
