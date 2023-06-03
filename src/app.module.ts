@@ -6,7 +6,6 @@ import { LoggerModule } from './libs/log.module'
 import { WebhookModule } from './webhook/webhook.module';
 import { KafkaModule } from './kafka/kafka.module';
 import { MongooseModule } from '@nestjs/mongoose'
-import { TenantModule } from './tenant/tenant.module';
 import { MessageModule } from './message/message.module';
 import { ConversationModule } from './conversation/conversation.module';
 
@@ -23,7 +22,6 @@ import { ConversationModule } from './conversation/conversation.module';
     WebhookModule,
     LoggerModule,
     KafkaModule,
-    TenantModule,
     MessageModule,
     ConversationModule
   ],

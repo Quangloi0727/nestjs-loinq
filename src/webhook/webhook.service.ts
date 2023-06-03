@@ -4,7 +4,6 @@ import { IFormatData } from './interface/format-data.interface'
 import { ChannelType, TYPE, DEFAULT_SENDER_NAME, EVENT_ZALO, ERROR_CODE_ZALO, MessageType } from './constants/index.constants'
 import { ProducerService } from '../kafka/producer.service'
 import { TOPIC } from './constants/topic.constants'
-import { TenantService } from '../tenant/tenant.service'
 import axios from 'axios'
 import { SendMessageToZaloRequest, SendMessageToZaloResponse } from '../protos/zalo-connector.pb'
 import { ConversationService } from '../conversation/conversation.service'
@@ -24,7 +23,6 @@ export class WebhookService {
   constructor(
     loggerService: LoggerService,
     private readonly producerService: ProducerService,
-    private readonly tenantService: TenantService,
     private readonly conversationService: ConversationService,
     @Inject(redisClient)
     private readonly clientRedis: RedisClientType

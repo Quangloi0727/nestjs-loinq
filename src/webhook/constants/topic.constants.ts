@@ -1,3 +1,3 @@
 export const TOPIC = {
-    ACD_MESSAGE_RECEIVED: 'ACD.Message.Received'
+    ACD_MESSAGE_RECEIVED: 'ACD.Message.Received.Local'
 }
