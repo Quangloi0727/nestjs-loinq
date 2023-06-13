@@ -7,7 +7,7 @@ import { Injectable } from '@nestjs/common'
 export class LoggerService {
 
     getLogger(moduleName): any {
-        if (!(moduleName instanceof String)) moduleName = moduleName.name || 'default'
+        if (!(moduleName instanceof String)) moduleName = moduleName.name || 'Default'
         try {
             const appList = []
             appList.push(moduleName)
@@ -17,8 +17,20 @@ export class LoggerService {
 
             const log4js = configure({
                 appenders: {
-                    console: { type: 'console' },
-                    filelog: { type: 'file', filename: appLog, pattern: '-yyyy-MM-dd', category: appList } //log theo từng ngày (có thể set up theo từng giờ/phút/giây -yyyy-MM-dd-hh-mm-ss)
+                    console: {
+                        type: 'console',
+                        layout: {
+                            type: 'pattern',
+                            pattern: '%[%d{yyyy-MM-dd hh:mm:ss} [%p]%] [%c]%]: %m'
+                        }
+                    },
+                    filelog: {
+                        type: 'file', filename: appLog, pattern: '-yyyy-MM-dd', category: appList,
+                        layout: {
+                            type: 'pattern',
+                            pattern: '%[%d{yyyy-MM-dd hh:mm:ss} [%p]%] [%c]%]: %m'
+                        }
+                    } //log theo từng ngày (có thể set up theo từng giờ/phút/giây -yyyy-MM-dd-hh-mm-ss)
                 },
                 categories: {
                     file: { appenders: ['filelog'], level: 'error' },
