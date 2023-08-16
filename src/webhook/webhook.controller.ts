@@ -1,4 +1,4 @@
-import { Controller, Post, Body, HttpCode, HttpStatus, Get, Query } from '@nestjs/common'
+import { Controller, Post, Body, HttpCode, HttpStatus } from '@nestjs/common'
 import { GrpcMethod } from '@nestjs/microservices'
 import { SendMessageToZaloRequest, SendMessageToZaloResponse, ZALO_CONNECTOR_SERVICE_NAME } from '../protos/zalo-connector.pb'
 import { WebhookService } from './webhook.service'
@@ -13,14 +13,8 @@ export class WebhookController {
     return this.webhookService.listenEventFromZalo(body)
   }
 
-  @Get('/zalo')
-  @HttpCode(HttpStatus.OK)
-  verifyUrlCallback(@Query() query: any) {
-    return HttpStatus.OK
-  }
-
   @GrpcMethod(ZALO_CONNECTOR_SERVICE_NAME)
-  async sendMessageToZalo(request: SendMessageToZaloRequest): Promise<SendMessageToZaloResponse>{
+  async sendMessageToZalo(request: SendMessageToZaloRequest): Promise<SendMessageToZaloResponse> {
     return this.webhookService.sendMessageToZalo(request)
   }
 }
