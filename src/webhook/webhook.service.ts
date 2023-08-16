@@ -32,8 +32,9 @@ export class WebhookService {
 
   async listenEventFromZalo(body: any) {
     this._logger.info(`Data receive from Zalo is: ${JSON.stringify(body, null, '\t')}`)
-    const { event_name } = body
+    const { event_name, message } = body
     if (event_name == EVENT_ZALO.FOLLOW || event_name == EVENT_ZALO.UN_FOLLOW) return HttpStatus.OK
+    if (message.text == EVENT_ZALO.USER_VERIFY_URL) return HttpStatus.OK
     const senderName = await this.getSenderName(body)
     const dataConvert = this.convertDataZalo(body, senderName)
     this._logger.info(`Data after convert and send to kafka is: ${JSON.stringify(dataConvert)}`)
@@ -46,8 +47,7 @@ export class WebhookService {
     try {
       this._logger.debug(`Data send to Zalo reply customer message: ${JSON.stringify(request.message, null, '\t')}`)
       const { conversationId, messageType, text, cloudAgentId, cloudTenantId } = request.message
-      const infoApp = await this.conversationService.findInfoAppToReply(conversationId)
-      //const tokenOfApp = await this.tenantService.findTokenByAppId(infoApp.applicationId)
+      const infoApp = await this.conversationService.findInfoAppToReply(conversationId).lean().exec()
       const listApp = JSON.parse(await this.clientRedis.get(REDIS_CACHE_TOKEN))
       const { accessToken } = listApp.find(el => el.applicationId === infoApp.applicationId)
       let fileName: string = ''

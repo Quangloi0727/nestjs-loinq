@@ -18,7 +18,8 @@ export const DEFAULT_SENDER_NAME = {
 
 export const EVENT_ZALO = {
     FOLLOW: 'follow',
-    UN_FOLLOW: 'unfollow'
+    UN_FOLLOW: 'unfollow',
+    USER_VERIFY_URL: 'This is testing message'
 }
 
 export const ERROR_CODE_ZALO = {
